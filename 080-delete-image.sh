@@ -27,8 +27,8 @@ image_deleted() {
   local status
   status=$(jq -r .status <<< "$image_json")
   case $status in
-  available|deleting) false ;;
-  *) echo expecting status x got $status; exit 1 ;;
+  available|deleting|pending) false ;;
+  *) echo expecting status available, deleting or pending got $status; exit 1 ;;
   esac
   false
 }
@@ -36,10 +36,10 @@ image_deleted() {
 this_dir=$(dirname "$0")
 source $this_dir/shared.sh
 
-image_name=$TF_VAR_prefix
+image_name=$TF_VAR_image_name
 
-echo '>>>' finding image
-images_json=$(ibmcloud is images --resource-group-name $TF_VAR_resource_group_NAME --output json)
+echo '>>>' finding image $image_name
+images_json=$(ibmcloud is images --resource-group-name $TF_VAR_resource_group_name --output json)
 if ! image_json=$(jq -e -r '.[]|select(.name == "'$image_name'")' <<< "$images_json"); then
   echo '>>>' image $image_name not found
 else
@@ -49,7 +49,7 @@ else
     echo '>>>' deleting image $image_id
     ibmcloud is image-delete --force $image_id
   fi
+  echo '>>>' waiting for image, $image_id, to be deleted
+  wait_for_command "image_deleted $image_id"
 fi
-echo '>>>' waiting for image to be deleted
-wait_for_command "image_deleted $image_id"
 success=true

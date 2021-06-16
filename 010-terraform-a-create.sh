@@ -23,11 +23,18 @@ source $this_dir/shared.sh
 )
 
 # wait for instance to finish the cloud init process
-floating_ip=$(read_terraform_variable floating_ip)
+floating_ip=$(read_terraform_a_variable floating_ip)
 echo '>>>' Last step: ssh to the instance, $floating_ip,  and wait for cloud-init to complete before continuing
 ssh_it $floating_ip <<SSH
   set -ex
   cloud-init status --wait
 SSH
 cat <<< "$ssh_it_out_and_err"
+
+# todo
+ssh_it $floating_ip <<SSH
+  cat /version.txt
+SSH
+cat <<< "$ssh_it_out_and_err"
+
 success=true

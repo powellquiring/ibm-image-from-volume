@@ -7,7 +7,9 @@ data "terraform_remote_state" "terraform_a" {
 }
 
 locals {
-  name              = "${data.terraform_remote_state.terraform_a.outputs.prefix}-b"
+  prefix            = data.terraform_remote_state.terraform_a.outputs.prefix
+  name              = "${local.prefix}-b"
+  image_name        = var.image_name
   region            = data.terraform_remote_state.terraform_a.outputs.region
   vpc_id            = data.terraform_remote_state.terraform_a.outputs.vpc_id
   resource_group_id = data.terraform_remote_state.terraform_a.outputs.resource_group_id
@@ -18,13 +20,17 @@ locals {
   subnet_id         = data.terraform_remote_state.terraform_a.outputs.subnet_id
 }
 
+data "ibm_is_image" "image_b" {
+  name = local.image_name
+}
+
 resource "ibm_is_instance" "mainb" {
   name           = local.name
   vpc            = local.vpc_id
   resource_group = local.resource_group_id
   zone           = local.zone
   keys           = [local.key_id]
-  image          = local.image_id
+  image          = data.ibm_is_image.image_b.id
   profile        = local.profile
 
   primary_network_interface {

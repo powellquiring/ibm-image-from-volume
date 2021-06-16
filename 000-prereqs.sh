@@ -2,7 +2,7 @@
 set -e
 
 echo ">>> login using apikey target resource group and region..."
-ibmcloud login --apikey $TF_VAR_ibmcloud_api_key -g $TF_VAR_resource_group_NAME -r $TF_VAR_region
+ibmcloud login --apikey $TF_VAR_ibmcloud_api_key -g $TF_VAR_resource_group_name -r $TF_VAR_region
 
 echo ">>> Setting VPC Gen for compute..."
 if ibmcloud is >/dev/null; then

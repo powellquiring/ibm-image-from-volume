@@ -1,7 +1,10 @@
 #!/bin/bash
 
-read_terraform_variable() {
+read_terraform_a_variable() {
   terraform output -raw -state $this_dir/terraform-a/terraform.tfstate $1
+}
+read_terraform_b_variable() {
+  terraform output -raw -state $this_dir/terraform-b/terraform.tfstate $1
 }
 ssh_it() {
   local host=$1

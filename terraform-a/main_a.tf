@@ -2,7 +2,7 @@ data "ibm_resource_group" "group" {
   name = var.resource_group_name
 }
 data "ibm_is_image" "image" {
-  name = var.instance_image_name
+  name = var.image_name_a
 }
 data "ibm_is_ssh_key" "ssh_key" {
   name = var.vpc_ssh_key_name
@@ -12,29 +12,30 @@ locals {
   tags           = []
   resource_group = data.ibm_resource_group.group
 
-  name = var.prefix
+  project_name = var.prefix
+  name           = "${var.prefix}-a"
   cidr = "10.0.0.0/16"
   zone = "${var.region}-1"
 }
 
 resource "ibm_is_vpc" "main" {
-  name                      = local.name
+  name                      = local.project_name
   resource_group            = local.resource_group.id
   address_prefix_management = "manual"
   tags                      = local.tags
 }
 resource "ibm_is_vpc_address_prefix" "main0" {
-  name = local.name
+  name = local.project_name
   zone = local.zone
   vpc  = ibm_is_vpc.main.id
   cidr = cidrsubnet(local.cidr, 8, 0)
 }
 resource "ibm_is_subnet" "main0" {
-  name            = local.name
+  name            = local.project_name
+  resource_group            = local.resource_group.id
   vpc             = ibm_is_vpc.main.id
   zone            = local.zone
   ipv4_cidr_block = ibm_is_vpc_address_prefix.main0.cidr
-  resource_group  = local.resource_group.id
 }
 
 resource "ibm_is_security_group_rule" "inbound_all" {
@@ -71,6 +72,34 @@ resource "ibm_is_floating_ip" "main0" {
   name           = local.name
   target         = ibm_is_instance.main0.primary_network_interface[0].id
 }
+
+resource "ibm_resource_instance" "kms" {
+  name = local.project_name
+  resource_group_id = local.resource_group.id
+  service = "kms"
+  plan = "tiered-pricing"
+  location = "us-south"
+}
+
+resource "ibm_kms_key" "image_key" {
+  instance_id  = ibm_resource_instance.kms.guid
+  key_name     = "image_key"
+  standard_key = false
+  force_delete = true
+}
+
+resource "ibm_iam_authorization_policy" "policy" {
+  source_service_name         = "server-protect"
+  target_service_name         = "kms"
+  target_resource_instance_id = ibm_resource_instance.kms.guid
+  roles                       = ["Reader"]
+}
+
+
+output "image_key_crn" {
+    value = ibm_kms_key.image_key.resource_crn
+}
+
 output "resource_group_id" {
   value = local.resource_group.id
 }

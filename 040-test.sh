@@ -15,19 +15,13 @@ check_finish() {
 this_dir=$(dirname "$0")
 source $this_dir/shared.sh
 
-
-(
-  cd terraform-b
-  terraform init
-  terraform apply -auto-approve
-)
-
-# wait for instance to finish the cloud init process
 floating_ip=$(read_terraform_b_variable floating_ip)
-echo '>>>' ssh to the instance, $floating_ip,  and wait for cloud-init to complete before continuing
-ssh_it $floating_ip <<SSH
+echo '>>>' verify the /version.txt file exists at $floating_ip
+ssh_it $floating_ip <<'SSH'
   set -ex
-  cloud-init status --wait
+  cat /version.txt
+  source /version.txt
+  [ x$version = x1 ]
 SSH
 cat <<< "$ssh_it_out_and_err"
 success=true
