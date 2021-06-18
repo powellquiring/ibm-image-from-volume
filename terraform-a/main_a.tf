@@ -18,6 +18,7 @@ locals {
   zone = "${var.region}-1"
 }
 
+
 resource "ibm_is_vpc" "main" {
   name                      = local.project_name
   resource_group            = local.resource_group.id
@@ -78,7 +79,7 @@ resource "ibm_resource_instance" "kms" {
   resource_group_id = local.resource_group.id
   service = "kms"
   plan = "tiered-pricing"
-  location = "us-south"
+  location = var.region
 }
 
 resource "ibm_kms_key" "image_key" {
